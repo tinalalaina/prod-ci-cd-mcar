@@ -1,0 +1,36 @@
+name: Reset Database & Media Only
+
+on:
+  push:
+    branches:
+      - db
+  workflow_dispatch:
+
+jobs:
+  reset-db:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install sshpass
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Reset DB & Media on server
+        run: |
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+          set -e
+
+          cd prod-ci-cd-gasycar-main
+
+          docker compose stop backend frontend || true
+          docker compose stop db || true
+
+          docker volume rm prod-ci-cd-gasycar-main_media_volume prod-ci-cd-gasycar-main_postgres_data prod-ci-cd-gasycar-main_static_volume || true
+
+          docker compose up -d db
+          sleep 10
+          docker compose up -d backend frontend nginx
+
+          echo "Database & media reset completed"
+          EOF

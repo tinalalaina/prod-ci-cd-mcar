@@ -1,0 +1,31 @@
+name: Deploy Frontend Only
+
+on:
+  push:
+    branches:
+      - frontend
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Deploy Frontend
+        run: |
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no root@${{ secrets.SERVER_IP }} << 'EOF'
+          set -e
+
+          cd prod-ci-cd-gasycar-main
+
+          git reset --hard
+          git pull origin main
+
+          docker compose pull frontend
+          docker compose up -d frontend
+
+          docker system prune -f
+          EOF
