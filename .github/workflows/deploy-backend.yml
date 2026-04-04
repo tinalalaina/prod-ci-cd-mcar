@@ -15,14 +15,19 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
       - name: Deploy Backend
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST || vars.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER || vars.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP || vars.SERVER_IP }}
+          SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
         run: |
           set -euo pipefail
 
-          HOST="${{ secrets.SERVER_HOST }}"
-          SERVER_USER="${{ secrets.SERVER_USER }}"
+          HOST="${SERVER_HOST:-}"
+          SERVER_USER="${SERVER_USER:-}"
 
           if [ -z "$HOST" ]; then
-            if [ -z "${{ secrets.SERVER_IP }}" ]; then
+            if [ -z "${SERVER_IP:-}" ]; then
               echo "Missing SERVER_HOST or SERVER_IP GitHub secret"
               exit 1
             fi
@@ -31,15 +36,15 @@ jobs:
               SERVER_USER="root"
             fi
 
-            HOST="$SERVER_USER@${{ secrets.SERVER_IP }}"
+            HOST="$SERVER_USER@${SERVER_IP}"
           fi
 
-          if [ -z "${{ secrets.SERVER_PASSWORD }}" ]; then
+          if [ -z "${SERVER_PASSWORD:-}" ]; then
             echo "Missing SERVER_PASSWORD GitHub secret"
             exit 1
           fi
 
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -T -o StrictHostKeyChecking=no "$HOST" << 'EOF'
+          sshpass -p "$SERVER_PASSWORD" ssh -T -o StrictHostKeyChecking=no "$HOST" << 'EOF'
           set -e
 
           cd prod-ci-cd-gasycar-main
