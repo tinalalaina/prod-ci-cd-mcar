@@ -19,12 +19,19 @@ jobs:
           set -euo pipefail
 
           HOST="${{ secrets.SERVER_HOST }}"
+          SERVER_USER="${{ secrets.SERVER_USER }}"
+
           if [ -z "$HOST" ]; then
-            if [ -z "${{ secrets.SERVER_USER }}" ] || [ -z "${{ secrets.SERVER_IP }}" ]; then
-              echo "Missing SERVER_HOST or SERVER_USER/SERVER_IP GitHub secrets"
+            if [ -z "${{ secrets.SERVER_IP }}" ]; then
+              echo "Missing SERVER_HOST or SERVER_IP GitHub secret"
               exit 1
             fi
-            HOST="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}"
+
+            if [ -z "$SERVER_USER" ]; then
+              SERVER_USER="root"
+            fi
+
+            HOST="$SERVER_USER@${{ secrets.SERVER_IP }}"
           fi
 
           if [ -z "${{ secrets.SERVER_PASSWORD }}" ]; then
