@@ -93,7 +93,7 @@ services:
     image: ${DOCKERHUB_USERNAME}/gasy-car-frontend:latest
     container_name: react_frontend
     environment:
-      VITE_API_BASE_URL: https://madagasycar.com/api
+      VITE_API_BASE_URL: https://mcar.tina-lalaina.site/api
     networks:
       - app_net
     ports:
