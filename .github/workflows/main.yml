@@ -18,7 +18,23 @@ jobs:
 
       - name: Deploy to Remote Server
         run: |
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          set -euo pipefail
+
+          HOST="${{ secrets.SERVER_HOST }}"
+          if [ -z "$HOST" ]; then
+            if [ -z "${{ secrets.SERVER_USER }}" ] || [ -z "${{ secrets.SERVER_IP }}" ]; then
+              echo "Missing SERVER_HOST or SERVER_USER/SERVER_IP GitHub secrets"
+              exit 1
+            fi
+            HOST="${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}"
+          fi
+
+          if [ -z "${{ secrets.SERVER_PASSWORD }}" ]; then
+            echo "Missing SERVER_PASSWORD GitHub secret"
+            exit 1
+          fi
+
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -T -o StrictHostKeyChecking=no "$HOST" << 'EOF'
           set -e
 
           cd prod-ci-cd-gasycar-main
@@ -28,13 +44,12 @@ jobs:
 
           docker compose down
 
-          if [ ! -d "./certbot/conf/live/madagasycar.com" ]; then
+          if [ ! -d "./certbot/conf/live/mcar.tina-lalaina.site" ]; then
             docker run --rm -p 80:80 \
               -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
               -v "$(pwd)/certbot/www:/var/www/certbot" \
               certbot/certbot certonly --standalone \
-              -d madagasycar.com \
-              -d www.madagasycar.com \
+              -d mcar.tina-lalaina.site \
               --email devworkshop26@gmail.com \
               --agree-tos \
               --no-eff-email
